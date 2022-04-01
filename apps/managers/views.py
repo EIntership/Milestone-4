@@ -1,5 +1,11 @@
+import datetime
+from time import timezone
+
 from rest_framework import generics, permissions
-from apps.managers.models import Task, Comment
+from rest_framework.decorators import api_view
+from rest_framework.views import APIView
+
+from apps.managers.models import Task, Comment, Time_Work
 from rest_framework.generics import get_object_or_404
 from apps.managers.serializers import (
     TaskSerializer,
@@ -8,7 +14,11 @@ from apps.managers.serializers import (
     CompleteTaskSerializer,
     CommentSerializer,
     ViewCommentsSerializer,
-    TimeLogSerializer)
+    TimeLogSerializer,
+    TimeWorkSerializer,
+    TimeFinishWorkSerializer,
+    TimeSerializer,
+    TimeFinishSerializer, )
 from django.contrib.auth.models import User
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
@@ -46,7 +56,7 @@ class MyTaskView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Task.objects.filter(user=user)
+        return Task.objects.filter(users=user)
 
 
 class CompletedTaskView(generics.ListAPIView):
@@ -54,7 +64,6 @@ class CompletedTaskView(generics.ListAPIView):
     serializer_class = TaskSerializer
 
     def get_queryset(self):
-        user = self.request.user
         return Task.objects.filter(completed=True)
 
 
@@ -84,6 +93,14 @@ class TimeLogView(generics.ListAPIView):
         return Response(TimeLogSerializer(task).data)
 
 
+class TimeLogMouthView(generics.ListAPIView):
+    serializer_class = TimeLogSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Task.objects.filter(users=user, date=datetime.datetime(2022,4,1,8,25,12))
+
+
 class CommentView(generics.ListAPIView):
     permissions_classes = (permissions.IsAuthenticated,)
     serializer_class = ViewCommentsSerializer
@@ -96,3 +113,27 @@ class CommentView(generics.ListAPIView):
         if getattr(self, 'swagger_fake_view', False):
             return
         return super().get_queryset()
+
+
+class TimeWorkView(generics.ListCreateAPIView):
+    permissions_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimeWorkSerializer
+    queryset = Time_Work.objects.all()
+
+
+class TimeFinishWorkView(generics.UpdateAPIView):
+    permissions_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimeFinishWorkSerializer
+    queryset = Time_Work.objects.all()
+
+
+class TimeView(generics.UpdateAPIView):
+    permissions_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimeSerializer
+    queryset = Task.objects.all()
+
+
+class TimeFinishView(generics.UpdateAPIView):
+    permissions_classes = (permissions.IsAuthenticated,)
+    serializer_class = TimeFinishSerializer
+    queryset = Task.objects.all()

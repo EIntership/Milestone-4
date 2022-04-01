@@ -19,3 +19,4 @@ class TaskAdmin(admin.ModelAdmin):
 
 admin.site.register(TaskList)
 admin.site.register(Project)
+admin.site.register(Time_Work)

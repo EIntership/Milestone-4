@@ -8,9 +8,13 @@ class CommentAdmin(admin.StackedInline):
     model = Comment
 
 
+class Time(admin.StackedInline):
+    model = Time
+
+
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    inlines = [CommentAdmin]
+    inlines = [CommentAdmin, Time]
     list_display = ('name', 'public', 'completed')
 
     class Meta:
@@ -20,3 +24,4 @@ class TaskAdmin(admin.ModelAdmin):
 admin.site.register(TaskList)
 admin.site.register(Project)
 admin.site.register(Time_Work)
+

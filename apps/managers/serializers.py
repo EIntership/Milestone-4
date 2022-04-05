@@ -1,11 +1,18 @@
 from rest_framework import serializers
-from apps.managers.models import Task, Comment, Time_Work
+from apps.managers.models import Task, Comment, Time_Work, Time
 from django.core.mail import EmailMessage
+
+
+class TimeTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Time
+        fields = ['id', 'date', 'date_finished', 'minutes']
 
 
 class TaskSerializer(serializers.ModelSerializer):
     name = serializers.CharField(required=True)
     description = serializers.CharField(required=False, write_only=True)
+    time = TimeTaskSerializer()
 
     class Meta:
         model = Task
@@ -21,9 +28,11 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class TaskDetailsSerializer(serializers.ModelSerializer):
+    time = TimeTaskSerializer()
+
     class Meta:
         model = Task
-        fields = ['id', 'name', 'description', 'completed', 'users']
+        fields = ['id', 'name', 'description', 'completed', 'users', 'time']
 
 
 class AssignTaskToUserSerializer(serializers.ModelSerializer):
@@ -93,7 +102,7 @@ class ViewCommentsSerializer(serializers.ModelSerializer):
 
 class TimeLogSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Task
+        model = Time
         fields = ['date', 'date_finished', 'time']
 
 
@@ -114,19 +123,16 @@ class TimeFinishWorkSerializer(serializers.ModelSerializer):
 
 
 class TimeSerializer(serializers.ModelSerializer):
-    date = serializers.DateTimeField(required=True)
 
     class Meta:
-        model = Time_Work
-        fields = ['date']
+        model = Time
+        fields = ['task', 'date']
 
 
 class TimeFinishSerializer(serializers.ModelSerializer):
     date_finished = serializers.DateTimeField(required=True)
 
     class Meta:
-        model = Time_Work
+        model = Time
         fields = ['date_finished']
-
-
 

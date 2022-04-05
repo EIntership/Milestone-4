@@ -11,9 +11,6 @@ class Task(models.Model):
     name = models.CharField(max_length=35)
     description = models.TextField()
     public = models.BooleanField('completed', default=False)
-    date = models.DateTimeField(auto_now_add=False, null=True)
-    date_finished = models.DateTimeField(auto_now_add=False, null=True)
-    time = models.CharField(max_length=150, null=True)
     priority = models.CharField(
         max_length=6,
         choices=(
@@ -33,11 +30,6 @@ class Task(models.Model):
 
     def __str__(self):
         return self.name
-
-    def save(self, *args, **kwargs):
-        if self.completed and self.date:
-            self.time = self.date_finished.replace(tzinfo=None) - self.date.replace(tzinfo=None)
-        super(Task, self).save(*args, **kwargs)
 
 
 class TaskList(models.Model):
@@ -74,4 +66,24 @@ class Time_Work(models.Model):
         if self.time_finish:
             self.time = self.time_finish.replace(tzinfo=None)-self.time_start.replace(tzinfo=None)
         super(Time_Work, self).save(*args, **kwargs)
+
+
+class Time(models.Model):
+    task = models.OneToOneField(Task, related_name="time", on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=False, null=True)
+    date_finished = models.DateTimeField(auto_now_add=False, null=True)
+    minutes = models.IntegerField(null=True, default=0)
+
+    def save(self, **kwargs):
+        date = self.date
+        date_finish = self.date_finished
+        if date_finish and date:
+            time = date_finish - date
+            minute = (time.days * 1440)+(time.seconds//60)
+            self.minutes = minute
+        super(Time, self).save(**kwargs)
+
+
+
+
 

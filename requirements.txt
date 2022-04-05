@@ -19,3 +19,6 @@ swagger-spec-validator==2.7.4
 
 
 
+
+python-dotenv~=0.20.0
+environ~=1.0

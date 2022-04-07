@@ -1,6 +1,20 @@
 from rest_framework import serializers
-from apps.managers.models import Task, Comment, Time_Work, Time
+from apps.managers.models import Task, Comment, TimeWork, Time
 from django.core.mail import EmailMessage
+
+
+class MakeTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'name', 'description']
+
+    def create(self, validated_data):
+        request = self.context['request']
+        if user := request.user:
+            validated_data.update({
+                'users': [user]
+            })
+        return super(MakeTaskSerializer, self).create(validated_data)
 
 
 class TimeTaskSerializer(serializers.ModelSerializer):
@@ -17,14 +31,6 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['id', 'name', 'time', 'description']
-
-    def create(self, validated_data):
-        request = self.context['request']
-        if user := request.user:
-            validated_data.update({
-                'users': [user]
-            })
-        return super(TaskSerializer, self).create(validated_data)
 
 
 class TaskDetailsSerializer(serializers.ModelSerializer):
@@ -66,7 +72,6 @@ class CompleteTaskSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if not instance.completed:
-            print(instance.date)
             instance.completed = not instance.completed
             to = []
             users = instance.users.all()
@@ -107,32 +112,37 @@ class TimeLogSerializer(serializers.ModelSerializer):
 
 
 class TimeWorkSerializer(serializers.ModelSerializer):
-    time_start = serializers.DateTimeField(required=True)
+    time_start = serializers.DateTimeField(required=False)
+    time_finish = serializers.DateTimeField(required=False)
+
+    def validate(self, attrs):
+        request = self.context['request']
+        method = request.method  # POST, PUT, PATCH
+        if method == 'POST':
+            attrs.pop('time_finish', None)
+        if method == 'PUT':
+            attrs.pop('time_start', None)
+        return attrs
 
     class Meta:
-        model = Time_Work
-        fields = ['time_start']
-
-
-class TimeFinishWorkSerializer(serializers.ModelSerializer):
-    time_finish = serializers.DateTimeField(required=True)
-
-    class Meta:
-        model = Time_Work
-        fields = ['time_finish']
+        model = TimeWork
+        fields = ['id', 'time_start', 'time_finish']
 
 
 class TimeSerializer(serializers.ModelSerializer):
+    date = serializers.DateTimeField(required=False)
+    date_finished = serializers.DateTimeField(required=False)
 
     class Meta:
         model = Time
-        fields = ['task', 'date']
+        fields = ['id', 'task', 'date', 'date_finished']
 
-
-class TimeFinishSerializer(serializers.ModelSerializer):
-    date_finished = serializers.DateTimeField(required=True)
-
-    class Meta:
-        model = Time
-        fields = ['date_finished']
-
+    def validate(self, attrs):
+        request = self.context['request']
+        method = request.method
+        if method == 'POST':
+            attrs.pop('date_finished', None)
+        if method == 'PUT':
+            attrs.pop('date', None)
+            attrs.pop('task', None)
+        return attrs

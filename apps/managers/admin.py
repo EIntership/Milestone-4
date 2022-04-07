@@ -15,13 +15,12 @@ class Time(admin.StackedInline):
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
     inlines = [CommentAdmin, Time]
-    list_display = ('name', 'public', 'completed')
+    list_display = ('name', 'public', 'priority', 'completed')
 
     class Meta:
         model = Task
 
 
-admin.site.register(TaskList)
-admin.site.register(Project)
-admin.site.register(Time_Work)
+admin.site.register(TimeWork)
+
 

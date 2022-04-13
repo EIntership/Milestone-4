@@ -94,7 +94,7 @@ class CompleteTaskSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
-        fields = ['task', 'comment']
+        fields = ['comment']
 
 
 class ViewCommentsSerializer(serializers.ModelSerializer):
@@ -115,6 +115,10 @@ class TimeWorkSerializer(serializers.ModelSerializer):
     time_start = serializers.DateTimeField(required=False)
     time_finish = serializers.DateTimeField(required=False)
 
+    class Meta:
+        model = TimeWork
+        fields = ['id', 'time_start', 'time_finish']
+
     def validate(self, attrs):
         request = self.context['request']
         method = request.method  # POST, PUT, PATCH
@@ -123,10 +127,6 @@ class TimeWorkSerializer(serializers.ModelSerializer):
         if method == 'PUT':
             attrs.pop('time_start', None)
         return attrs
-
-    class Meta:
-        model = TimeWork
-        fields = ['id', 'time_start', 'time_finish']
 
 
 class TimeSerializer(serializers.ModelSerializer):

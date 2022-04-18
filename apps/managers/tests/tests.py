@@ -8,11 +8,16 @@ from rest_framework import status
 
 from django.test.client import JSON_CONTENT_TYPE_RE  # noqa
 from datetime import datetime
+from abc import ABC
 
 
 # Create your base tests here.
 
-class TaskCRUDTests(APITestCase):
+class AbstractClass(ABC):
+    user_test1 = User.objects.get(username='test')
+
+    def setUp(self):
+        self.user_test1 = self.user_test1
 
     def _callTestMethod(self, method):
         class_name = self.__class__.__name__
@@ -22,11 +27,11 @@ class TaskCRUDTests(APITestCase):
         )
         super()._callTestMethod(method)
 
+
+class TaskCRUDTests(APITestCase, AbstractClass):
+
     def setUp(self):
-        user_test1 = User.objects.create(username='test', password='test1234')
-        user_test1.save()
-        self.user_test1 = user_test1
-        self.client.force_authenticate(user=user_test1)
+        self.client.force_authenticate(user=self.user_test1)
         self.fake_data = {
             "name": "string",
             "description": "string",
@@ -102,6 +107,7 @@ class TaskCRUDTests(APITestCase):
     def test_task_start_time(self):
         response = self.client.post(path=self.endpoint, data=json.dumps(self.fake_data),
                                     content_type='application/json').json()
+        print(response)
         self.assertEqual(self.queryset.filter(pk=response.get('id')).count(), 1)
         instance = self.queryset.filter(pk=response.get('id')).first()
         result = self.client.post(path=f'{self.endpoint}{instance.id}/start_time/',
@@ -120,9 +126,10 @@ class TaskCRUDTests(APITestCase):
                                   content_type='application/json').json()
         self.assertEqual(result.get("date_finished"), None)
         # result['date_finished'] = 0
+        instance.refresh_from_db()
         updated = self.client.put(path=f'{self.endpoint}{instance.id}/finish_time/', data=json.dumps(self.time),
                                   content_type='application/json').json()
-        instance.refresh_from_db()
+        # instance.refresh_from_db()
         time_instance = self.time_queryset.filter(task=instance).first()
         # self.assertNotEqual(time_instance.date_finished, None)
         print(f'{Colors.YELLOW}{updated}{Colors.END}')
@@ -261,6 +268,7 @@ class TestCompletedTask(APITestCase):
         self.assertEqual(instance.completed, True)
         detail = self.client.get(path=f'{self.endpoint_task}detail/{instance.id}',
                                  content_type='application/json').json()
+       # self.assertEqual()
         print(f'{Colors.RED}{detail}{Colors.END}')
 
     def test_complete_task_update(self):
@@ -286,15 +294,6 @@ class TestAddTaskToUser(APITestCase):
         super()._callTestMethod(method)
 
     def setUp(self) -> None:
-        user_test1 = User.objects.create(username='test', password='test1234')
-        user_test1.save()
-        self.client.force_authenticate(user=user_test1)
-        self.endpoint = '/manager/task/'
-        self.endpoint_user = '/manager/add-task-to-user/'
-        self.fake_data = {
-            "name": "string",
-            "description": "string"
-        }
         self.fake_data_user = {
             "users": [
                 1

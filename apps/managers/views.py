@@ -130,12 +130,13 @@ class CompleteTaskView(generics.UpdateAPIView):
     http_method_names = ['put']
 
 
-class TimeWorkView(viewsets.ModelViewSet):  # generics.ListCreateAPIView):
+class TimeWorkView(viewsets.ViewSet):  # generics.ListCreateAPIView):
     permissions_classes = (permissions.IsAuthenticated,)
     serializer_class = TimeWorkSerializer
     queryset = TimeWork.objects.all()
 
     @action(detail=False, methods=["POST"])
+    @swagger_auto_schema(request_body=TimeWorkSerializer)
     def start(self, request):
         data = request.data
         user = request.user
@@ -146,6 +147,7 @@ class TimeWorkView(viewsets.ModelViewSet):  # generics.ListCreateAPIView):
         return Response({'status': 'negative'})
 
     @action(detail=True, methods=["PUT"])
+    @swagger_auto_schema(request_body=TimeWorkSerializer)
     def finish(self, request, pk=None):
         data = request.data
         instance = TimeWork.objects.filter(id=pk).first()

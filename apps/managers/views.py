@@ -34,6 +34,7 @@ class TaskView(viewsets.ModelViewSet):
     serializer_class = MakeTaskSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     filter_fields = ['name']
+    http_method_names = ['put', 'get', 'post', 'delete']
 
     @action(detail=True, methods=["POST"])
     @swagger_auto_schema(request_body=TimeSerializer)
@@ -45,7 +46,6 @@ class TaskView(viewsets.ModelViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
-        print(serializer.is_valid())
         return Response({'status': 'negative'})
 
     @action(detail=True, methods=["PUT"])

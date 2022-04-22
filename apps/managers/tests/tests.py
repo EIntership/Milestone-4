@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase
+
 from apps.managers.utils import Colors
 from apps.managers.models import Task, TimeWork, Time, Comment
 import random
@@ -7,18 +8,44 @@ from django.contrib.auth.models import User
 from rest_framework import status
 
 from django.test.client import JSON_CONTENT_TYPE_RE  # noqa
-from datetime import datetime
+from datetime import datetime, timedelta
 from abc import ABC
 
 
 # Create your base tests here.
 
 class AbstractClass(ABC):
-    user_test1 = User.objects.get(username='test')
-
-    def setUp(self):
-        self.user_test1 = self.user_test1
-
+    user_test2 = User.objects.get(username='User')
+    time_queryset = Time.objects.all()
+    queryset = Task.objects.all()
+    comment_queryset = Comment.objects.all()
+    fake_data = {
+        "name": "string",
+        "description": "string",
+    }
+    update_fake_data = {
+        "name": "string1",
+        "description": "string1"
+    }
+    time = {
+        "date": f"{datetime.now()}",
+        "date_finish": f"{datetime.now()}",  # None
+    }
+    comment_fake_data = {
+        "comment": "alohaaaaaaaaaaaaa"
+    }
+    fake_data_completed = {
+        "completed": 'true'
+    }
+    fake_data_user = {
+        "users": [
+            user_test2.id
+        ]
+    }
+    endpoint = '/manager/task/'
+    endpoint_my = '/manager/mytask'
+    endpoint_complete = '/manager/complete'
+    endpoint_user = '/manager/add-task-to-user/'
     def _callTestMethod(self, method):
         class_name = self.__class__.__name__
         method_name = method.__name__
@@ -29,29 +56,17 @@ class AbstractClass(ABC):
 
 
 class TaskCRUDTests(APITestCase, AbstractClass):
+    def _callTestMethod(self, method):
+        class_name = self.__class__.__name__
+        method_name = method.__name__
+        print(
+            f'{Colors.BOLD}{Colors.BLUE} {class_name}{Colors.END} -> {Colors.GREEN}{method_name}{Colors.END}'
+        )
+        super()._callTestMethod(method)
 
     def setUp(self):
+        self.user_test1 = User.objects.create(username='test', password='123321')
         self.client.force_authenticate(user=self.user_test1)
-        self.fake_data = {
-            "name": "string",
-            "description": "string",
-        }
-        self.update_fake_data = {
-            "name": "string1",
-            "description": "string1"
-        }
-        self.time = {
-            "date": f"{datetime.now()}",
-            "date_finish": f"{datetime.now()}",  # None
-        }
-        self.comment_fake_data = {
-            "comment": "alohaaaaaaaaaaaaa"
-        }
-        self.endpoint = '/manager/task/'
-        self.endpoint_my = '/manager/mytask'
-        self.queryset = Task.objects.all()
-        self.time_queryset = Time.objects.all()
-        self.comment_queryset = Comment.objects.all()
 
     def test_list(self):
         response = self.client.get(self.endpoint)
@@ -87,7 +102,6 @@ class TaskCRUDTests(APITestCase, AbstractClass):
         instance = self.queryset.first()
         result = self.client.put(path=f'{self.endpoint}{instance.id}/', data=json.dumps(self.update_fake_data),
                                  content_type='application/json').json()
-        instance.refresh_from_db()
         self.assertNotEqual(response, result)
         print(f'{Colors.RED}{response}->{result}{Colors.END}')
 
@@ -125,11 +139,10 @@ class TaskCRUDTests(APITestCase, AbstractClass):
                                   data=json.dumps(self.time),
                                   content_type='application/json').json()
         self.assertEqual(result.get("date_finished"), None)
-        # result['date_finished'] = 0
-        instance.refresh_from_db()
-        updated = self.client.put(path=f'{self.endpoint}{instance.id}/finish_time/', data=json.dumps(self.time),
+        id_result = result.get('id')
+        updated = self.client.put(path='/manager/task/1/finish_time/',
+                                  data=json.dumps({'date_finished': f'{datetime.now()}'}),
                                   content_type='application/json').json()
-        # instance.refresh_from_db()
         time_instance = self.time_queryset.filter(task=instance).first()
         # self.assertNotEqual(time_instance.date_finished, None)
         print(f'{Colors.YELLOW}{updated}{Colors.END}')
@@ -164,12 +177,11 @@ class TaskCRUDTests(APITestCase, AbstractClass):
                              data=json.dumps(self.time),
                              content_type='application/json').json()
             self.client.put(path=f'{self.endpoint}{task.id}/finish_time/',
-                            data=json.dumps(self.time),
+                            data=json.dumps({'date_finished': f'{datetime.now() + timedelta(hours=task.id)}'}),
                             content_type='application/json').json()
-            task.refresh_from_db()
         top_biggest_time_task = self.client.get(path=f'{self.endpoint}top-biggest-time-task',
                                                 content_type='application/json').json()
-        print(top_biggest_time_task)
+        assert (len(top_biggest_time_task) <= 20)
 
     def test_add_comment(self):
 
@@ -180,7 +192,8 @@ class TaskCRUDTests(APITestCase, AbstractClass):
         comment = self.client.post(path=f'{self.endpoint}{instance.id}/add_comment/',
                                    data=json.dumps(self.comment_fake_data),
                                    content_type='application/json').json()
-        self.assertNotEqual(comment, None)
+
+        self.assertEqual(comment['comment'], self.comment_fake_data['comment'])
         print(f'{Colors.RED}{comment}{Colors.END}')
 
     def test_comment(self):
@@ -191,39 +204,31 @@ class TaskCRUDTests(APITestCase, AbstractClass):
         comment = self.client.post(path=f'{self.endpoint}{instance.id}/add_comment/',
                                    data=json.dumps(self.comment_fake_data),
                                    content_type='application/json').json()
-        self.assertNotEqual(comment, None)
+        self.assertEqual(comment['comment'], self.comment_fake_data['comment'])
         result = self.client.get(path=f'{self.endpoint}{instance.id}/comment/',
                                  content_type='application/json').json()
+        print(result['task_comment'][0])
         print(f'{Colors.RED}{result}{Colors.END}')
 
 
-class TestWorkTime(APITestCase):
-    def _callTestMethod(self, method):
-        class_name = self.__class__.__name__
-        method_name = method.__name__
-        print(
-            f'{Colors.BOLD}{Colors.BLUE} {class_name}{Colors.END} -> {Colors.GREEN}{method_name}{Colors.END}'
-        )
-        super()._callTestMethod(method)
-
+class TestWorkTime(APITestCase, AbstractClass):
     def setUp(self) -> None:
-        self.endpoint = '/manager/work-time/'
+        self.endpoint_work_time = '/manager/work-time/'
         user_test1 = User.objects.create(username='test', password='test1234')
-        user_test1.save()
         self.client.force_authenticate(user=user_test1)
         self.queryset = TimeWork.objects.all()
         self.fake_data = {'time_start': f'{datetime.now()}',
                           'time_finish': f'{datetime.now()}'}
 
     def test_start_time_work(self):
-        response = self.client.post(path=f'{self.endpoint}start/')
+        response = self.client.post(path=f'{self.endpoint_work_time}start/')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         print(f'{Colors.RED}{response}{Colors.END}')
 
     def test_finish_time_work(self):
-        response = self.client.post(path=f'{self.endpoint}start/', data=self.fake_data).json()
+        response = self.client.post(path=f'{self.endpoint_work_time}start/', data=self.fake_data).json()
         instance = self.queryset.filter(pk=response.get('id')).first()
-        result = self.client.put(path=f'{self.endpoint}{instance.id}/finish/',
+        result = self.client.put(path=f'{self.endpoint_work_time}{instance.id}/finish/',
                                  data=json.dumps(self.fake_data),
                                  content_type='application/json').json()
         instance.refresh_from_db()
@@ -231,48 +236,29 @@ class TestWorkTime(APITestCase):
         print(f'{Colors.RED}{result}{Colors.END}')
 
 
-class TestCompletedTask(APITestCase):
-    def _callTestMethod(self, method):
-        class_name = self.__class__.__name__
-        method_name = method.__name__
-        print(
-            f'{Colors.BOLD}{Colors.BLUE} {class_name}{Colors.END} -> {Colors.GREEN}{method_name}{Colors.END}'
-        )
-        super()._callTestMethod(method)
-
+class TestCompletedTask(APITestCase, AbstractClass):
     def setUp(self) -> None:
         user_test1 = User.objects.create(username='test', password='test1234')
-        user_test1.save()
         self.client.force_authenticate(user=user_test1)
-        self.endpoint = '/manager/complete'
-        self.endpoint_task = '/manager/task/'
-        self.fake_data = {
-            "name": "string",
-            "description": "string"
-        }
-        self.fake_data_completed = {
-            "completed": 'true'
-        }
-        self.queryset = Task.objects.all()
 
     def test_completed_task_get(self):
-        response = self.client.post(path=self.endpoint_task,
+        response = self.client.post(path=self.endpoint,
                                     data=json.dumps(self.fake_data),
                                     content_type='application/json').json()
         instance = self.queryset.filter(pk=response.get('id')).first()
         self.assertEqual(instance.completed, False)
-        update = self.client.put(path=f'{self.endpoint}/{instance.id}',
+        update = self.client.put(path=f'{self.endpoint_complete}/{instance.id}',
                                  data=json.dumps(self.fake_data_completed),
                                  content_type='application/json').json()
         instance.refresh_from_db()
         self.assertEqual(instance.completed, True)
-        detail = self.client.get(path=f'{self.endpoint_task}detail/{instance.id}',
+        detail = self.client.get(path=f'{self.endpoint}detail/{instance.id}',
                                  content_type='application/json').json()
-       # self.assertEqual()
         print(f'{Colors.RED}{detail}{Colors.END}')
+#####################################################################################
 
     def test_complete_task_update(self):
-        response = self.client.post(path=self.endpoint_task,
+        response = self.client.post(path=self.endpoint,
                                     data=json.dumps(self.fake_data),
                                     content_type='application/json').json()
         instance = self.queryset.filter(pk=response.get('id')).first()
@@ -284,22 +270,10 @@ class TestCompletedTask(APITestCase):
         print(f'{Colors.RED}{update}{Colors.END}')
 
 
-class TestAddTaskToUser(APITestCase):
-    def _callTestMethod(self, method):
-        class_name = self.__class__.__name__
-        method_name = method.__name__
-        print(
-            f'{Colors.BOLD}{Colors.BLUE} {class_name}{Colors.END} -> {Colors.GREEN}{method_name}{Colors.END}'
-        )
-        super()._callTestMethod(method)
-
+class TestAddTaskToUser(APITestCase, AbstractClass):
     def setUp(self) -> None:
-        self.fake_data_user = {
-            "users": [
-                1
-            ]
-        }
-        self.queryset = Task.objects.all()
+        user_test1 = User.objects.create(username='User', password='user')
+        self.client.force_authenticate(user=user_test1)
 
     def test_add_task_to_user(self):
         response = self.client.post(path=self.endpoint,
@@ -314,3 +288,17 @@ class TestAddTaskToUser(APITestCase):
                                  content_type='application/json').json()
         self.assertEqual(detail.get('users'), [1])
         print(f'{Colors.RED}{detail}{Colors.END}')
+
+
+class TestMyTask(APITestCase, AbstractClass):
+    def setUp(self):
+        self.user_test1 = User.objects.create(username='test', password='123321')
+        self.client.force_authenticate(user=self.user_test1)
+
+    def test_my_task(self):
+        response = self.client.post(path=self.endpoint, data=json.dumps(self.fake_data),
+                                    content_type='application/json').json()
+        self.client.get(path=f'{self.endpoint_my}', content_type='application/json').json()
+        instance = self.queryset.filter(pk=response.get('id')).first()
+        self.assertEqual(instance.users.filter(id__in=[self.user_test1.id]).exists(), True)
+        print(f'{Colors.YELLOW}{instance.users.filter(id__in=[self.user_test1.id])}{Colors.END}')

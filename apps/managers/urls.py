@@ -27,8 +27,8 @@ urlpatterns = [
     path('time-month', TaskMonthView.as_view(), name='task-time-log-view'),
     path('mytask', MyTaskView.as_view(), name='my-task-view'),
     path('complete', CompletedTaskView.as_view(), name='completed-task'),
-    path('add-task-to-user/<int:pk>', AssignTaskToUser.as_view(), name="add-task-to-user"),
+    path('add-task-to-user/<int:pk>/', AssignTaskToUser.as_view(), name="add-task-to-user"),
     path('complete/<int:pk>', CompleteTaskView.as_view(), name="complete-task-view"),
-
 ]
 urlpatterns += router.urls
+

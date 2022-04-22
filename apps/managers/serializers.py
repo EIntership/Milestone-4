@@ -135,7 +135,7 @@ class TimeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Time
-        fields = ['id', 'task', 'date', 'date_finished']
+        fields = ['id', 'date', 'date_finished']
 
     def validate(self, attrs):
         request = self.context['request']

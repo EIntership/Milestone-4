@@ -4,7 +4,15 @@ services:
   dm_db:
     image: postgres:10.1-alpine
     volumes:
-      - postgress_data:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data/
   dm_web:
     build: .
-    command: python /usr/app/
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/urs/app/Test
+    ports:
+      - 8000:8000
+    depends_on:
+      - dm_db
+volumes:
+  postgres_data:

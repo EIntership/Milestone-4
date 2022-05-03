@@ -21,7 +21,7 @@ from .yasg import urlpattern as url_date
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('manager/', include("apps.managers.urls"), name="managers"),
+    path('', include("apps.managers.urls"), name="managers"),
     path('', include("apps.users.urls"), name="authentication_page"),
 ]
 urlpatterns += url_date

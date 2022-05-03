@@ -3,7 +3,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, permissions, viewsets
 from django.utils import timezone
 from rest_framework.decorators import action
-
+from django_redis import get_redis_connection
+from django.core.cache import cache
 from apps.managers.models import Task, Comment, TimeWork, Time
 from rest_framework.generics import get_object_or_404
 from apps.managers.serializers import (
@@ -192,9 +193,29 @@ class TaskMonthView(generics.ListAPIView):
 
 
 class TopBiggestTimeTask(generics.ListAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.AllowAny,)
     serializer_class = TimeTaskSerializer
     queryset = Time.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if cache.get('BigTime'):
+            BigTime = cache.get('BigTime')
+            print('from bd')
+        else:
+            try:
+                cache.set('BigTime', queryset)
+                BigTime = cache.get('BigTime')
+                print('to db')
+            except Time.DoesNotExist:
+                return Response("Not exist")
+        #print(queryset, "|||||||", BigTime)
+        serializer = self.get_serializer(BigTime, many=True)
+        return Response(serializer.data)
+
+
+    def tearDown(self):
+        get_redis_connection("default").flushall()
 
     def get_queryset(self):
         queryset = super(TopBiggestTimeTask, self).get_queryset()

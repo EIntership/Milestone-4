@@ -1,5 +1,5 @@
 from rest_framework import routers
-from django.urls import path
+from django.urls import path, include
 from apps.managers.views import (
     TaskView,
     TaskDetailView,
@@ -29,6 +29,8 @@ urlpatterns = [
     path('complete', CompletedTaskView.as_view(), name='completed-task'),
     path('add-task-to-user/<int:pk>/', AssignTaskToUser.as_view(), name="add-task-to-user"),
     path('complete/<int:pk>', CompleteTaskView.as_view(), name="complete-task-view"),
+    path('test/', include("apps.managers.GenericTest.urls"))
+
 ]
 urlpatterns += router.urls
 

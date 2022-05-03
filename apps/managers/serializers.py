@@ -59,7 +59,6 @@ class AssignTaskToUserSerializer(serializers.ModelSerializer):
             'eugenshow83@gmail.com',
             to
         )
-        print(validated_data)
         email.fail_silently = False
         email.send()
         return super(AssignTaskToUserSerializer, self).update(instance, validated_data)
@@ -146,3 +145,9 @@ class TimeSerializer(serializers.ModelSerializer):
             attrs.pop('date', None)
             attrs.pop('task', None)
         return attrs
+
+
+class TestCommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['comment']

@@ -1,11 +1,14 @@
 version: '3.7'
 
 services:
-  redis:
-    image: 'bitnami/redis:latest'
-    environment:
-      - ALLOW_EMPTY_USERNAME=yes
-      - ALLOW_EMPTY_PASSWORD=yes
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    networks:
+      - app-network
+      - api-network
   dm_db:
     image: postgres:10.1-alpine
     volumes:
@@ -29,7 +32,7 @@ services:
       - 8000:8000
     depends_on:
       - dm_db
-      - redis
+      - cache
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
